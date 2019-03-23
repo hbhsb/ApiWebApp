@@ -31,12 +31,26 @@ namespace ApiWebApp
             services.AddAuthentication("Bearer")
                 .AddJwtBearer("Bearer", options =>
                 {
-                    options.Authority = "http://localhost:5000";
+                    options.Authority = Configuration["identityServer"];
                     options.RequireHttpsMetadata = false;
                     options.TokenValidationParameters.ClockSkew = TimeSpan.FromMinutes(1);
                     options.TokenValidationParameters.RequireExpirationTime = true;
                     options.Audience = "api1";
                 });
+
+            services.AddCors(options =>
+            {
+                // this defines a CORS policy called "default"
+                options.AddPolicy("default", policy =>
+                {
+                    policy.WithOrigins("http://localhost:3000")
+                        .AllowAnyHeader()
+                        .AllowAnyMethod();
+                    policy.WithOrigins("http://localhost:3000")
+                        .AllowAnyHeader()
+                        .AllowAnyMethod();
+                });
+            });
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
@@ -46,6 +60,7 @@ namespace ApiWebApp
             {
                 app.UseDeveloperExceptionPage();
             }
+            app.UseCors("default");
             app.UseAuthentication();
             app.UseMvc();
         }
