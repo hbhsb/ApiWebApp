@@ -3,45 +3,92 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 
 namespace ApiWebApp.Controllers
 {
-    [Route("api/[controller]")]
+    [Route("Articles")]
     [ApiController]
-    [Authorize]
     public class ValuesController : ControllerBase
     {
-        // GET api/values
-        [HttpGet]
-        public ActionResult<IEnumerable<string>> Get()
+        public ValuesController()
         {
-            return new JsonResult(from c in User.Claims select new { c.Type, c.Value });
+
         }
 
-        // GET api/values/5
-        [HttpGet("{id}")]
-        public ActionResult<string> Get(int id)
+        // GET api/values
+        [HttpGet]
+        public ActionResult<IEnumerable<Article>> GetAll()
         {
-            return "value";
+            return ArticleRepository.Articles;
+        }
+
+        //// GET api/values/5
+        //[HttpGet("{id}")]
+        //public ActionResult<Article> Get(int id)
+        //{
+        //    Article article = ArticleRepository.Articles.Find(c => c.Id == id);
+        //    if (article == null)
+        //    {
+        //        return NotFound(new {Mag= $"Article {id} isn't fount" });
+        //    }
+        //    return article;
+        //}
+
+
+        [HttpGet("{id}")]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
+        public ActionResult<Article> Get(int id, string writer)
+        {
+            Article article = null;
+            if (string.IsNullOrEmpty(writer))
+            {
+                article = ArticleRepository.Articles.Find(c => c.Id == id);
+            }
+            else
+            {
+                article = ArticleRepository.Articles.Find(c => c.Id == id && c.Writer == writer);
+            }
+            if (article == null)
+            {
+                return NotFound(new { Mag = $"Article {id} isn't fount" });
+            }
+            return article;
         }
 
         // POST api/values
         [HttpPost]
-        public void Post([FromBody] string value)
+        public ActionResult Post([FromBody] Article article)
         {
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(ModelState);
+            }
+            ArticleRepository.Articles.Add(article);
+            return Ok();
         }
 
         // PUT api/values/5
         [HttpPut("{id}")]
         public void Put(int id, [FromBody] string value)
         {
+
         }
 
         // DELETE api/values/5
         [HttpDelete("{id}")]
         public void Delete(int id)
         {
+
         }
+
+        [HttpPatch("{id}")]
+        public void Patch(int id)
+        {
+
+        }
+
+
     }
 }
