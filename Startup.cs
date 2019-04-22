@@ -10,6 +10,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
+using Newtonsoft.Json.Serialization;
 
 namespace ApiWebApp
 {
@@ -34,7 +35,14 @@ namespace ApiWebApp
                 )
                 .AddAuthorization()
                 .AddXmlDataContractSerializerFormatters()
-                .AddJsonFormatters();
+                .AddJsonFormatters()
+                .AddJsonOptions(options =>
+                {
+                    if (options.SerializerSettings.ContractResolver is DefaultContractResolver resolver)
+                    {
+                        resolver.NamingStrategy = null;
+                    }
+                });
 
             services.AddAuthentication("Bearer")
                 .AddJwtBearer("Bearer", options =>
@@ -43,15 +51,18 @@ namespace ApiWebApp
                     options.RequireHttpsMetadata = false;
                     options.TokenValidationParameters.ClockSkew = TimeSpan.FromMinutes(1);
                     options.TokenValidationParameters.RequireExpirationTime = true;
-                    options.Audience = "api1";
+                    options.Audience = "ArticlesApi";
                 });
-
+            services.AddAuthenticationCore(options =>
+            {
+                options.AddScheme<SimpleAuthenticationHandler>("SimpleScheme", "demo scheme");
+            });
             services.AddCors(options =>
             {
                 // this defines a CORS policy called "default"
                 options.AddPolicy("default", policy =>
                 {
-                    policy.WithOrigins("http://localhost:3000")
+                    policy.WithOrigins("http://localhost:8000")
                         .AllowAnyHeader()
                         .AllowAnyMethod();
                     policy.WithOrigins("http://localhost:3000")

@@ -5,6 +5,8 @@ using System.Threading.Tasks;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Server.HttpSys;
+using Newtonsoft.Json.Serialization;
 
 namespace ApiWebApp.Controllers
 {
@@ -18,17 +20,24 @@ namespace ApiWebApp.Controllers
         }
 
         // GET api/values
+        [Authorize(AuthenticationSchemes = "SimpleScheme")]
         [HttpGet]
-        public ActionResult<IEnumerable<Article>> GetAll()
+        //[Route("Articles")]
+        public ActionResult<IEnumerable<Article>> GetAll(int cataId)
         {
-            return ArticleRepository.Articles;
+            if (cataId > 0)
+            {
+                Catalog catalog = Repository.Catalogs.First(c => c.Id == cataId);
+                return catalog.Articles.ToList();
+            }
+            return Repository.Articles;
         }
-
+        
         //// GET api/values/5
         //[HttpGet("{id}")]
         //public ActionResult<Article> Get(int id)
         //{
-        //    Article article = ArticleRepository.Articles.Find(c => c.Id == id);
+        //    Article article = Repository.Articles.Find(c => c.Id == id);
         //    if (article == null)
         //    {
         //        return NotFound(new {Mag= $"Article {id} isn't fount" });
@@ -44,11 +53,11 @@ namespace ApiWebApp.Controllers
             Article article = null;
             if (string.IsNullOrEmpty(writer))
             {
-                article = ArticleRepository.Articles.Find(c => c.Id == id);
+                article = Repository.Articles.Find(c => c.Id == id);
             }
             else
             {
-                article = ArticleRepository.Articles.Find(c => c.Id == id && c.Writer == writer);
+                article = Repository.Articles.Find(c => c.Id == id && c.Writer == writer);
             }
             if (article == null)
             {
@@ -56,8 +65,10 @@ namespace ApiWebApp.Controllers
             }
             return article;
         }
+        
 
         // POST api/values
+        [Authorize(AuthenticationSchemes = "Bearer")]
         [HttpPost]
         public ActionResult Post([FromBody] Article article)
         {
@@ -65,7 +76,7 @@ namespace ApiWebApp.Controllers
             {
                 return BadRequest(ModelState);
             }
-            ArticleRepository.Articles.Add(article);
+            Repository.Articles.Add(article);
             return Ok();
         }
 
@@ -78,8 +89,25 @@ namespace ApiWebApp.Controllers
 
         // DELETE api/values/5
         [HttpDelete("{id}")]
-        public void Delete(int id)
+        public ActionResult Delete(int id)
         {
+            if (!Repository.Articles.Exists(a => a.Id == id))
+            {
+                return NotFound();
+            }
+
+            Article article = Repository.Articles.FirstOrDefault(a => a.Id == id);
+            if (article == null)
+            {
+                return NotFound();
+            }
+
+            if (Repository.Articles.Remove(article))
+            {
+                return NoContent();
+            }
+
+            return NotFound();
 
         }
 
